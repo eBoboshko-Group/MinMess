@@ -25,7 +25,7 @@ class DbMessenger():
                 (id_sender, id_chat, text, date)
             )
             self.conn.commit()
-            return True
+            return False
         
         except Exception as e:
             return str(e)
@@ -34,13 +34,13 @@ class DbMessenger():
         '''Получает все сообщения находящиеся в чатах где состоит данный пользователь'''
         id_chats, error = self.get_chats(id_user)
 
-        if not error:
+        if error:
             # Ошибка в get_chats()
-            return [{'error': id_chats}], False
+            return [{'error': id_chats}], True
         
         if not id_chats:
             # Чатов нет
-            return [], True
+            return [], False
         
         placeholders = ', '.join(['%s'] * len(id_chats))
         query = f"""SELECT id_mess, id_sender, id_chat, text, date FROM message WHERE id_chat IN ({placeholders})"""
@@ -59,10 +59,10 @@ class DbMessenger():
                 }
                 for message in messages
             ]
-            return messages_data, True
+            return messages_data, False
         
         except Exception as e:
-            return [{'error': str(e)}], False
+            return [{'error': str(e)}], True
 
     def get_chats(self, id_user: int) -> tuple[list, bool]:
         '''Получение списка чатов данного пользователя'''
@@ -74,12 +74,12 @@ class DbMessenger():
             data = self.cur.fetchone()
 
             if data:
-                return data[0], True
+                return data[0], False
             
-            return [], True
+            return [], False
         
         except Exception as e:
-            return str(e), False
+            return str(e), True
 
 if __name__ == "__main__":
     db = DbMessenger()
