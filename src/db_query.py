@@ -1,46 +1,45 @@
 import psycopg2
-#import json
 import datetime
 
 class DbMessenger():
     def __init__(self):
         '''Установка соединения с БД'''
         self.conn = psycopg2.connect(
-            host="46.8.225.46",
-            database="minmess",
-            port="5432",
-            user="postgres",
-            password="Buhjvfybz123!"
+            host     = "46.8.225.46",
+            database = "minmess",
+            port     = "5432",
+            user     = "postgres",
+            password = "Buhjvfybz123!"
         )
         self.cur = self.conn.cursor()
 
-    def send_messsage(self, id_sender: int, id_chat: int, text: str) -> bool | str:
+    def send_messsage(self, id_sender: int, id_chat: int, text: str) -> tuple[float, str]:
         '''Отправка сообщения от данного пользователя в данный чат'''
         date = datetime.datetime.now()
         text = text.strip()
 
         try:
             self.cur.execute(
-                """INSERT INTO message (id_sender, id_chat, text, date) VALUES (%s, %s, %s, %s)""",
-                (id_sender, id_chat, text, date)
+                query = """INSERT INTO message (id_sender, id_chat, text, date) VALUES (%s, %s, %s, %s)""",
+                vars  = (id_sender, id_chat, text, date)
             )
             self.conn.commit()
-            return False
+            return date, text
         
-        except Exception as e:
-            return str(e)
+        except Exception:
+            return 0.0, None
 
-    def update(self, id_user: int) -> tuple[list, bool]:
+    def update(self, id_user: int) -> dict:
         '''Получает все сообщения находящиеся в чатах где состоит данный пользователь'''
-        id_chats, error = self.get_chats(id_user)
+        id_chats = self.get_chats(id_user)
 
-        if error:
+        if id_chats is None:
             # Ошибка в get_chats()
-            return [{'error': id_chats}], True
+            return {'status': "Ошибка"}
         
         if not id_chats:
             # Чатов нет
-            return [], False
+            return {'status': "Чатов нет"}
         
         placeholders = ', '.join(['%s'] * len(id_chats))
         query = f"""SELECT id_mess, id_sender, id_chat, text, date FROM message WHERE id_chat IN ({placeholders})"""
@@ -59,28 +58,24 @@ class DbMessenger():
                 }
                 for message in messages
             ]
-            return messages_data, False
+            return messages_data
         
-        except Exception as e:
-            return [{'error': str(e)}], True
+        except Exception:
+            return None
 
-    def get_chats(self, id_user: int) -> tuple[list, bool]:
+    def get_chats(self, id_user: int) -> list:
         '''Получение списка чатов данного пользователя'''
         try:
             self.cur.execute(
-                """SELECT id_chats FROM "user" WHERE id_user = %s""",
-                (id_user,)
+                query = """SELECT id_chats FROM "user" WHERE id_user = %s""",
+                vars  = (id_user,)
             )
             data = self.cur.fetchone()
 
-            if data:
-                return data[0], False
+            if data and data[0]:
+                return data[0]
             
-            return [], False
+            return []
         
-        except Exception as e:
-            return str(e), True
-
-if __name__ == "__main__":
-    db = DbMessenger()
-    db.get_chats(1)
+        except Exception:
+            return None

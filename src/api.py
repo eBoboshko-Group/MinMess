@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from endpoints import register_endpoints
+from src.endpoints import register_endpoints
 
 # Создаём приложение FastAPI
 app = FastAPI()

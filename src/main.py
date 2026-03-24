@@ -1,21 +1,33 @@
 from requests import get
+from config import *
 
-def send_message(id_sender: int, id_chat: int, text: str) -> str:
-    url: str = f"http://46.8.225.46:8001/send_mes/{id_sender}/{id_chat}/{text}"
-    response = get(url)
+def ping():
+    response = get(
+        url     = f"{FULL_DOMAIN}/",
+        timeout = 60
+    )
 
-    if response.status_code == 200:
+    if response.status_code == 200: # OK
         data = response.json()
-
-        text = (
-            f"Сообщение для {id_chat} {data['status']}"
-        )
-    
+        return data
     else:
-        text = f"Возникла ошибка при отправке сообщения\nКод ошибки: {response.status_code}"
+        return {'status': False}
 
-    return text
+def send_message(id_sender: int, id_chat: int, text: str):
+    url = f"{FULL_DOMAIN}/send_message/{id_sender}/{id_chat}/{text}"
+    response = get(
+        url     = url,
+        timeout = 60
+    )
+
+    if response.status_code == 200: # OK
+        data = response.json()
+        result = f"Сообщение успешно отправлено ({data['date']})"
+    else:
+        result = f"Ошибка в процессе отправки ({response.status_code})"
+
+    return result
 
 if __name__ == "__main__":
-    text = send_message(1, 2, "TIMURIBRAGIMOV")
-    print(text)
+    status = ping()
+    print(status['status'])
