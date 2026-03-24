@@ -27,10 +27,11 @@ def register_endpoints(app: FastAPI):
         return {'id_chats': id_chats}
     
     @app.get('/update/{id_user}')
-    def update(id_user: int) -> dict:
+    def update(id_user: int):
         messages_data = db.update(id_user)
-
-        if messages_data is None or not messages_data:
-            return None
         
+        # Если вернулся словарь с ошибкой
+        if messages_data is dict and "error" in messages_data:
+            return {"status": "error", "details": messages_data["error"]}
+            
         return messages_data

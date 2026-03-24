@@ -3,7 +3,6 @@ import datetime
 
 class DbMessenger():
     def __init__(self):
-        '''Установка соединения с БД'''
         self.conn = psycopg2.connect(
             host     = "46.8.225.46",
             database = "minmess",
@@ -13,8 +12,7 @@ class DbMessenger():
         )
         self.cur = self.conn.cursor()
 
-    def send_messsage(self, id_sender: int, id_chat: int, text: str) -> tuple[float, str]:
-        '''Отправка сообщения от данного пользователя в данный чат'''
+    def send_messsage(self, id_sender: int, id_chat: int, text: str):
         date = datetime.datetime.now()
         text = text.strip()
 
@@ -25,22 +23,20 @@ class DbMessenger():
             )
             self.conn.commit()
             return date, text
-        
-        except Exception:
-            return 0.0, None
+            
+        except Exception as e:
+            print(f"Error send: {e}")
+            return None, None
 
-    def update(self, id_user: int) -> dict:
-        '''Получает все сообщения находящиеся в чатах где состоит данный пользователь'''
+    def update(self, id_user: int):
         id_chats = self.get_chats(id_user)
 
         if id_chats is None:
-            # Ошибка в get_chats()
-            return {'status': "Ошибка"}
+            return {"error": "Ошибка получения чатов (на уровне БД)"}
         
         if not id_chats:
-            # Чатов нет
-            return {'status': "Чатов нет"}
-        
+            return []
+
         placeholders = ', '.join(['%s'] * len(id_chats))
         query = f"""SELECT id_mess, id_sender, id_chat, text, date FROM message WHERE id_chat IN ({placeholders})"""
         
@@ -48,23 +44,21 @@ class DbMessenger():
             self.cur.execute(query, id_chats)
             messages = self.cur.fetchall()
 
-            messages_data = [
+            return [
                 {
-                    'id_mess': message[0],
-                    'id_sender': message[1],
-                    'id_chat': message[2],
-                    'text': message[3],
-                    'date': message[4]
+                    'id_mess': m[0],
+                    'id_sender': m[1],
+                    'id_chat': m[2],
+                    'text': m[3],
+                    'date': m[4].isoformat() if isinstance(m[4], datetime.datetime) else m[4]
                 }
-                for message in messages
+                for m in messages
             ]
-            return messages_data
-        
-        except Exception:
-            return None
+        except Exception as e:
+            print(f"Error update: {e}")
+            return {"error": str(e)}
 
-    def get_chats(self, id_user: int) -> list:
-        '''Получение списка чатов данного пользователя'''
+    def get_chats(self, id_user: int):
         try:
             self.cur.execute(
                 query = """SELECT id_chats FROM "user" WHERE id_user = %s""",
@@ -77,5 +71,23 @@ class DbMessenger():
             
             return []
         
-        except Exception:
+        except Exception as e:
+            print(f"Error get_chats: {e}")
+            return None
+
+    def delete_message(self, id_mess: int):
+        try:
+            self.cur.execute(
+                query = """DELETE FROM message WHERE id_mess = %s""",
+                vars  = (id_mess,)
+            )
+            data = self.cur.fetchone()
+
+            if data and data[0]:
+                return data[0]
+            
+            return []
+        
+        except Exception as e:
+            print(f"Error get_chats: {e}")
             return None
