@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from src.db_query import DbMessenger
+from db_query import DbMessenger
 
 def register_endpoints(app: FastAPI):
     db = DbMessenger()
