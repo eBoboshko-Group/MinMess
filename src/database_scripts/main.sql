@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS "messages" (  -- Таблица со всеми со�
     "id_sender" INTEGER    NOT NULL,     -- ID Отправителями
     "id_chat"   INTEGER    NOT NULL,     -- ID Чата, в который отправлено сообщение
     "text"      TEXT       NOT NULL,     -- Текст сообщения
-    "date"      TIMESTAMP                -- Дата записи в БД
+    "date"      TIMESTAMP,               -- Дата записи в БД в виде unix timestamp
+    "date_edit" TIMESTAMP  DEFAULT -1    -- Дата последнего изменения текста сообщения в виде unix timestamp, но где -1 - сообщение не изменялось.
 );
 
 --CREATE TABLE IF NOT EXISTS "session" (
